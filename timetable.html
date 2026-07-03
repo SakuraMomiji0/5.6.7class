@@ -310,7 +310,7 @@ main{
     <a href="index.html" class="back-btn">← index.htmlに戻る</a>
     <div>
       <input type="file" id="csvFile">
-      <span id="status" style="font-size:11px;color:#666;">CSVを選択</span>
+      <span id="status" style="font-size:11px;color:#666;">自動読込中...</span>
     </div>
   </div>
   <div id="date-display">---</div>
@@ -425,7 +425,32 @@ ids.forEach(id=>{
   }
 });
 
-/* ===== CSV読み込み ===== */
+/* ===== CSV自動読み込み (Webサーバー配信用) ===== */
+window.addEventListener("DOMContentLoaded", () => {
+  // 同じ場所にある「timetable.csv」を自動的にロードする
+  fetch("./timetable.csv")
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("ネットワーク応答が正常ではありません");
+      }
+      // Shift-JISで保存されているCSVを正しくデコードするための配列バッファ取得
+      return response.arrayBuffer();
+    })
+    .then(buffer => {
+      let decoder = new TextDecoder("shift-jis");
+      let text = decoder.decode(buffer);
+      all = text.split(/\r?\n/).map(x => x.split(","));
+      col = 1;
+      update();
+      document.getElementById("status").textContent = "自動読込完了";
+    })
+    .catch(error => {
+      console.log("自動読み込みスキップ、またはファイル未検出:", error);
+      document.getElementById("status").textContent = "CSVを選択";
+    });
+});
+
+/* ===== CSV手動選択読み込み ===== */
 document.getElementById("csvFile").addEventListener("change",e=>{
   let f=e.target.files[0];
   let r=new FileReader();
