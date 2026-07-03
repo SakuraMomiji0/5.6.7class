@@ -21,15 +21,23 @@
   --text:#222;
 }
 
+/* 
+  Googleサイトの埋め込み枠（iFrame）に100%フィットさせるため、
+  htmlとbodyの余白を完全にゼロにし、スクロールバーを強制非表示にします。
+*/
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100vh !important;
+  width: 100vw !important;
+  overflow: hidden !important;
+}
+
 body{
-  margin:0;
-  height:100vh;
-  width:100vw;
   display:flex;
   flex-direction:column;
   background:var(--bg);
   font-family:"LocalFont";
-  overflow:hidden;
   box-sizing:border-box;
 }
 
@@ -88,10 +96,10 @@ main{
   grid-template-columns:repeat(8,1fr);
   grid-template-rows:1fr 1fr;
   gap:6px;
-  padding:8px;
+  padding:8px; /* 周囲のパーツ間の余白。ここも完全に詰めたい場合は 0px に変更してください */
   flex:1;
   width:100%;
-  height:calc(100vh - 55px);
+  height:calc(100vh - 45px); /* ヘッダーの高さ(45px)に合わせて正確に計算 */
   box-sizing:border-box;
 }
 
@@ -102,8 +110,8 @@ main{
   display:flex;
   flex-direction:column;
   min-width:0; 
-  height: 100%; /* ←これを追加：縦幅を自動で綺麗に合わせる */
-  box-sizing: border-box; /* ←これも追加：枠線のズレを防ぐ */
+  height: 100%; 
+  box-sizing: border-box; 
 }
 
 .section-card h3{
@@ -155,7 +163,7 @@ main{
   font-size:25px;
   border-left:4px solid #bfc7d1;
   overflow:hidden;
-  white-space:nowrap; /* 文字がはみ出しても崩れないように */
+  white-space:nowrap; 
 }
 
 .highlight-red{
@@ -177,14 +185,14 @@ main{
 /* 時計 */
 #clock{
   position: fixed;
-  right: 30px;       /* 右端からの余白 */
-  top: 10px;          /* 上からの余白（ヘッダーの高さ内に収まるように調整） */
-  font-size: 40px;    /* ヘッダーに収まるサイズ（元のコードのサイズ） */
+  right: 30px;       
+  top: 10px;          
+  font-size: 40px;    
   font-weight: bold;
   color: #333;
   letter-spacing: 1px;
   font-family: "LocalFont";
-  z-index: 10;        /* ヘッダーより確実に前面に出す場合 */
+  z-index: 10;        
 }
 
 /* ===== 取り消し線 ===== */
@@ -219,9 +227,9 @@ main{
 
 .att-title-container{
   display:flex;
-  justify-content:flex-start; /* 左寄せに変更 */
+  justify-content:flex-start; 
   align-items:center;
-  gap:10px;                    /* 文字とボタンの隙間 */
+  gap:10px;                    
   border-bottom:2px solid #333;
   padding-bottom:2px;
 }
