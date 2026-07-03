@@ -101,7 +101,9 @@ main{
   border-radius:4px;
   display:flex;
   flex-direction:column;
-  min-width:0; /* 横幅がウィンドウからはみ出るのを防ぐ */
+  min-width:0; 
+  height: 100%; /* ←これを追加：縦幅を自動で綺麗に合わせる */
+  box-sizing: border-box; /* ←これも追加：枠線のズレを防ぐ */
 }
 
 .section-card h3{
