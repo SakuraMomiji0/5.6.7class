@@ -427,8 +427,10 @@ ids.forEach(id=>{
 
 /* ===== CSV自動読み込み (Webサーバー配信用) ===== */
 window.addEventListener("DOMContentLoaded", () => {
-  // 同じ場所にある「timetable.csv」を自動的にロードする
-  fetch("./timetable.csv")
+  // ★ 末尾に「?t=タイムスタンプ」を合体させて、ブラウザの古い記憶（キャッシュ）を強制的に破壊します
+  const cacheBuster = "?t=" + new Date().getTime();
+  
+  fetch("./timetable.csv" + cacheBuster)
     .then(response => {
       if (!response.ok) {
         throw new Error("ネットワーク応答が正常ではありません");
@@ -436,8 +438,8 @@ window.addEventListener("DOMContentLoaded", () => {
       return response.arrayBuffer();
     })
     .then(buffer => {
-      // ★ CSVがUTF-8で保存されているケースに対応するため「utf-8」に変更
-      let decoder = new TextDecoder("utf-8");
+      // 手動選択で成功している「Shift-JIS（windows-31j）」を確実に適用
+      let decoder = new TextDecoder("windows-31j");
       let text = decoder.decode(buffer);
       all = text.split(/\r?\n/).map(x => x.split(","));
       col = 1;
@@ -460,8 +462,7 @@ document.getElementById("csvFile").addEventListener("change",e=>{
     update();
     document.getElementById("status").textContent="読込完了";
   };
-  // ★ 手動読み込み側も「utf-8」に統一
-  r.readAsText(f,"utf-8");
+  r.readAsText(f,"windows-31j");
 });
 
 function update(){
@@ -661,7 +662,7 @@ window.addEventListener("DOMContentLoaded",()=>{
     headerEl.appendChild(selectEl);
     secEl.appendChild(headerEl);
 
-    const listEl = document.createElement("div");
+    const listEl = document.getElementById(`list-${sec.key}`);
     listEl.id = `list-${sec.key}`;
     listEl.className = "att-name-list";
     secEl.appendChild(listEl);
