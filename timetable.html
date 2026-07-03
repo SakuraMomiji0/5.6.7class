@@ -433,12 +433,11 @@ window.addEventListener("DOMContentLoaded", () => {
       if (!response.ok) {
         throw new Error("ネットワーク応答が正常ではありません");
       }
-      // Shift-JISで保存されているCSVを正しくデコードするための配列バッファ取得
       return response.arrayBuffer();
     })
     .then(buffer => {
-      // ★ 最も互換性の高い特殊対応型のエンコード名「windows-31j」に指定し、Excel起因の文字化けを完全解消
-      let decoder = new TextDecoder("windows-31j");
+      // ★ CSVがUTF-8で保存されているケースに対応するため「utf-8」に変更
+      let decoder = new TextDecoder("utf-8");
       let text = decoder.decode(buffer);
       all = text.split(/\r?\n/).map(x => x.split(","));
       col = 1;
@@ -457,12 +456,12 @@ document.getElementById("csvFile").addEventListener("change",e=>{
   let r=new FileReader();
   r.onload=e=>{
     all=e.target.result.split(/\r?\n/).map(x=>x.split(","));
-    col = 1; // ★新しいCSVファイルを読み込んだ時に、最初の日付位置へ自動リセット
+    col = 1; 
     update();
     document.getElementById("status").textContent="読込完了";
   };
-  // ★ 自動読み込みと整合性を合わせるため「windows-31j」で読み込み
-  r.readAsText(f,"windows-31j");
+  // ★ 手動読み込み側も「utf-8」に統一
+  r.readAsText(f,"utf-8");
 });
 
 function update(){
@@ -499,12 +498,11 @@ function update(){
         }
       }
       cells[i].textContent=text;
-      cells[i].classList.remove("strike"); // 日付変更時に取り消し線をリセット
+      cells[i].classList.remove("strike"); 
       cells[i].classList.toggle("highlight-red",highlight);
     }
   });
 
-  // 日付変更時にも欠席自動取り消し線を同期
   if(typeof syncAbsentStrikes === "function") syncAbsentStrikes();
 }
 
@@ -543,11 +541,9 @@ let attendanceState = {
   leave: []   
 };
 
-// ★欠席者の全セルに自動で線を引く・消す関数
 function syncAbsentStrikes() {
   ids.forEach(id => {
     const cells = document.getElementById(id).children;
-    // 現在の欠席リストに名前マップの苗字が含まれているかチェック
     const isAbsent = attendanceState.absent.some(name => nameMap[id].includes(name));
     
     for (let i = 0; i < cells.length; i++) {
@@ -566,7 +562,6 @@ window.addEventListener("DOMContentLoaded",()=>{
   board.style.gridColumn="7 / 9";
   board.style.gridRow="2 / 3";
 
-  // タイトルとリセットボタンを包むコンテナ
   const titleContainer=document.createElement("div");
   titleContainer.className="att-title-container";
 
@@ -575,7 +570,6 @@ window.addEventListener("DOMContentLoaded",()=>{
   title.textContent="出欠管理";
   titleContainer.appendChild(title);
 
-  // リセットボタンの生成
   const resetBtn=document.createElement("button");
   resetBtn.className="att-reset-btn";
   resetBtn.textContent="リセット";
@@ -613,19 +607,15 @@ window.addEventListener("DOMContentLoaded",()=>{
       selectEl.innerHTML = `<option value="">+ 追加</option>`;
       
       students.forEach(name => {
-        // すでに「このリスト自体」に登録されているかチェック
         const isAlreadyInThisSec = attendanceState[sec.key].includes(name);
-        // 「欠席」に登録されているかチェック
         const isAbsent = attendanceState.absent.includes(name);
 
         let canAdd = false;
 
         if (sec.key === "absent") {
-          // 欠席に登録できるのは、遅刻・早退を含めまだどこにも登録されていない人のみ
           const isAssignedAnywhere = sections.some(s => attendanceState[s.key].includes(name));
           if (!isAssignedAnywhere) canAdd = true;
         } else {
-          // 遅刻・早退に登録できるのは、「欠席」しておらず、かつ「そのリスト」にまだいない人（遅刻と早退の重複は可能）
           if (!isAbsent && !isAlreadyInThisSec) canAdd = true;
         }
 
@@ -639,11 +629,9 @@ window.addEventListener("DOMContentLoaded",()=>{
       selectEl.value = ""; 
     });
 
-    // 描画更新の最後に自動取り消し線を同期
     syncAbsentStrikes();
   };
 
-  // リセットボタンのクリックイベント割り当て
   resetBtn.addEventListener("click", () => {
     attendanceState.absent = [];
     attendanceState.late = [];
