@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>時間割表示システム</title>
+
+<style>
+/* ★ローカルフォント読み込み */
+@font-face {
+  font-family: "LocalFont";
+  src: url("./keifont.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+:root{
+  --bg:#f0f2f5;
+  --card:#ffffff;
+  --line:#c7c7c7;
+  --blue:#3a7bd5;
+  --text:#222;
+}
+
+body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  background:var(--bg);
+  font-family:"LocalFont";
+  overflow:hidden;
+}
+
+/* header */
+header{
+  height:45px;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:5px 15px;
+  border-bottom:1px solid #ddd;
+  position:relative;
+}
+
+.header-left {
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+.back-btn {
+  font-size:12px;
+  padding:4px 10px;
+  cursor:pointer;
+  background:#fff;
+  border:1px solid #ccc;
+  border-radius:4px;
+  font-family:"LocalFont";
+  text-decoration:none;
+  color:#333;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transition: background 0.2s;
+}
+.back-btn:hover {
+  background:#f5f5f5;
+  border-color:#b3b3b3;
+}
+
+#date-display{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:40px;
+  font-weight:bold;
+  color:var(--blue);
+}
+
+/* grid */
+main{
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  grid-template-rows:1fr 1fr;
+  gap:6px;
+  padding:8px;
+  flex:1;
+  box-sizing:border-box;
+}
+
+.section-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:4px;
+  display:flex;
+  flex-direction:column;
+}
+
+.section-card h3{
+  margin:0;
+  padding:4px;
+  font-size:20px;
+  text-align:center;
+  background:#f3f5f7;
+  border-bottom:1px solid #ddd;
+  text-shadow: 0 0 2px rgba(0,0,0,0.5000);
+}
+
+.list-container{
+  display:flex;
+  flex-direction:row;
+  flex:1;
+}
+
+.period-column{
+  width:12px;
+  display:flex;
+  flex-direction:column;
+}
+
+.period-cell{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  color:#555;
+  border:1px solid #e1e1e1;
+  background:#fafafa;
+}
+
+.subject-column{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+.cell{
+  flex:1;
+  border:1px solid #e1e1e1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:25px;
+  border-left:4px solid #bfc7d1;
+  overflow:hidden;
+}
+
+.highlight-red{
+  background:#fff6f6;
+  color:#c0392b;
+  border-left-color:#e74c3c;
+}
+
+/* 名前色 */
+.section-card.blue h3{ background:#dcebff; color:#1f4f91; }
+.section-card.red h3{ background:#ffe0e0; color:#8e1b1b; }
+.section-card.green h3{ background:#dff5df; color:#1f6b2a; }
+
+.empty-card{
+  background:transparent;
+  border:none;
+}
+
+/* 時計 */
+#clock{
+  position: fixed;
+  right: 30px;       /* 右端からの余白 */
+  top: 10px;          /* 上からの余白（ヘッダーの高さ内に収まるように調整） */
+  font-size: 40px;    /* ヘッダーに収まるサイズ（元のコードのサイズ） */
+  font-weight: bold;
+  color: #333;
+  letter-spacing: 1px;
+  font-family: "LocalFont";
+  z-index: 10;        /* ヘッダーより確実に前面に出す場合 */
+}
+
+/* ===== 取り消し線 ===== */
+.strike{
+  position:relative;
+  color:#666;
+}
+.strike::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  top:50%;
+  height:3px;
+  background:red;
+  transform:translateY(-50%);
+  pointer-events:none;
+}
+
+/* ===== 出欠管理 ===== */
+#attendance-board{
+  background:#fff;
+  border:1px solid #ccc;
+  border-radius:4px;
+  padding:8px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  overflow:hidden;
+}
+
+.att-title-container{
+  display:flex;
+  justify-content:flex-start; /* 左寄せに変更 */
+  align-items:center;
+  gap:10px;                   /* 文字とボタンの隙間 */
+  border-bottom:2px solid #333;
+  padding-bottom:2px;
+}
+
+.att-title{
+  font-weight:bold;
+  font-size:16px;
+}
+
+.att-reset-btn{
+  font-size:11px;
+  padding:2px 6px;
+  cursor:pointer;
+  background:#f5f5f5;
+  border:1px solid #ccc;
+  border-radius:3px;
+  font-family:"LocalFont";
+}
+.att-reset-btn:hover{
+  background:#e5e5e5;
+}
+
+.att-sections-container {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  flex:1;
+  overflow-y:auto;
+}
+
+.att-section{
+  flex:1;
+  border:1px solid #ddd;
+  border-radius:4px;
+  padding:4px;
+  display:flex;
+  flex-direction:column;
+  background:#fafafa;
+}
+
+.att-section-header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:4px;
+  font-weight:bold;
+  font-size:18px;
+}
+
+.att-section select {
+  font-size:12px;
+  padding:1px;
+  max-width:100px;
+}
+
+.att-name-list {
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  align-content:flex-start;
+  flex:1;
+}
+
+.name-badge {
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:2px 6px;
+  border-radius:3px;
+  font-size:16px;
+  font-weight:bold;
+}
+
+.name-badge .remove-btn {
+  cursor:pointer;
+  font-weight:normal;
+  color:#666;
+}
+.name-badge .remove-btn:hover {
+  color:#000;
+}
+
+.sec-absent .att-section-header { color:#c0392b; }
+.sec-absent .name-badge { background:#ffe0e0; color:#c0392b; border:1px solid #f5b7b1; }
+
+.sec-late .att-section-header { color:#b7791f; }
+.sec-late .name-badge { background:#fef9e7; color:#b7791f; border:1px solid #f9e79f; }
+
+.sec-leave .att-section-header { color:#1f4f91; }
+.sec-leave .name-badge { background:#eaf2f8; color:#1f4f91; border:1px solid #a9cce3; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-left">
+    <a href="index.html" class="back-btn">← index.htmlに戻る</a>
+    <div>
+      <input type="file" id="csvFile">
+      <span id="status" style="font-size:11px;color:#666;">CSVを選択</span>
+    </div>
+  </div>
+  <div id="date-display">---</div>
+</header>
+
+<main id="main"></main>
+<div id="clock">--:--:--</div>
+
+<script>
+let all=[];
+let col=1;
+let currentTime = {hour:0,minute:0,second:0};
+
+function updateClock(){
+  let now = new Date();
+  currentTime.hour = now.getHours();
+  currentTime.minute = now.getMinutes();
+  currentTime.second = now.getSeconds();
+
+  let h = String(currentTime.hour).padStart(2,"0");
+  let m = String(currentTime.minute).padStart(2,"0");
+  let s = String(currentTime.second).padStart(2,"0");
+
+  document.getElementById("clock").textContent = `${h}:${m}:${s}`;
+}
+
+setInterval(updateClock,1000);
+updateClock();
+
+const ids=[
+  'sumiya','maeda','inoue','tokuhei',
+  'kubo','enomoto','shinjo','tanaka_natsu',
+  'kawaguchi','hara','yasunami','watanabe'
+];
+
+const nameMap={
+  sumiya:"墨谷 (2-1)",maeda:"前田 (2-1)",inoue:"井上 (2-2)",tokuhei:"得平 (2-2)",
+  kubo:"久保 (2-2)",enomoto:"榎本 (2-3)",tanaka_natsu:"田中 (2-3)",shinjo:"新城 (2-3)",
+  kawaguchi:"川口 (1-2)",hara:"原 (3-1)",yasunami:"安並 (3-2)",watanabe:"渡辺 (3-3)"
+};
+
+const rowMap={
+  sumiya:56,maeda:56,
+  inoue:57,tokuhei:57,kubo:57,
+  enomoto:58,tanaka_natsu:58,shinjo:58,
+  kawaguchi:54,hara:59,yasunami:60,watanabe:61
+};
+
+const blueGroup=['sumiya','shinjo','kubo','tokuhei','tanaka_natsu','maeda','enomoto','inoue'];
+const redGroup=['hara','yasunami','watanabe'];
+const greenGroup=['kawaguchi'];
+
+const scanRules={
+  maeda:["国語","数学","英語","社会","理科","技術","美術","家庭"],
+  kubo:["国語","数学","社会","理科","英語","音楽","技術","美術","家庭"],
+  inoue:["国語","数学"],
+  tokuhei:["国語","数学","社会","理科","英語"],
+  enomoto:["国語","数学","英語"],
+  shinjo:["国語","数学","英語","社会","理科"],
+  yasunami:(t)=>["国語","数学","社会","理科","英語","体育","音楽"].includes(t),
+  hara:(t)=>["技術","家庭","国語","数学","社会","理科","英語", "技家"].includes(t),
+  watanabe:(t)=>["国語","数学","社会","理科","英語","美術","技術","家庭", "技家"].includes(t),
+  kawaguchi:(t)=>["国語","数学"].includes(t)
+};
+
+function normalize(text){
+  return (text||"")
+    .replace(/体育|保体/g,"保体")
+    .replace(/国語[AB]/g,"国語")
+    .replace(/社会[AB]/g,"社会");
+}
+
+const main=document.getElementById("main");
+
+/* ===== 画面生成 ===== */
+ids.forEach(id=>{
+  let sec=document.createElement("div");
+  sec.className="section-card";
+  if (blueGroup.includes(id)) sec.classList.add("blue");
+  if (redGroup.includes(id)) sec.classList.add("red");
+  if (greenGroup.includes(id)) sec.classList.add("green");
+
+  sec.innerHTML = `
+    <h3>${nameMap[id]}</h3>
+    <div class="list-container">
+      <div class="period-column" id="${id}-period"></div>
+      <div class="subject-column" id="${id}"></div>
+    </div>
+  `;
+  main.appendChild(sec);
+
+  if(id==="kawaguchi"){
+    let empty=document.createElement("div");
+    empty.className="empty-card section-card";
+    main.appendChild(empty);
+  }
+
+  let periodCol = document.getElementById(id+"-period");
+  let subjectCol = document.getElementById(id);
+
+  for(let i=1;i<=6;i++){
+    let p=document.createElement("div");
+    p.className="period-cell";
+    p.textContent=i;
+    periodCol.appendChild(p);
+  }
+
+  for(let i=0;i<6;i++){
+    let d=document.createElement("div");
+    d.className="cell";
+    subjectCol.appendChild(d);
+  }
+});
+
+/* ===== CSV読み込み ===== */
+document.getElementById("csvFile").addEventListener("change",e=>{
+  let f=e.target.files[0];
+  let r=new FileReader();
+  r.onload=e=>{
+    all=e.target.result.split(/\r?\n/).map(x=>x.split(","));
+    col = 1; // ★新しいCSVファイルを読み込んだ時に、最初の日付位置へ自動リセット
+    update();
+    document.getElementById("status").textContent="読込完了";
+  };
+  r.readAsText(f,"Shift-JIS");
+});
+
+function update(){
+  let dateStr = (all[0]||[])[col] || "";
+  let dayStr = ((all[1]||[])[col] || "").charAt(0);
+  document.getElementById("date-display").textContent = dateStr ? `${dateStr}（${dayStr}）` : "---";
+
+  ids.forEach(id=>{
+    let row=rowMap[id];
+    let cells=document.getElementById(id).children;
+    for(let i=0;i<6;i++){
+      let c=col+i;
+      let raw=(all[row]||[])[c]||"";
+      let nRaw=normalize(raw);
+      let text=raw;
+      let highlight=false;
+      let rule = scanRules[id];
+      let matched = false;
+
+      if (Array.isArray(rule)) {
+        matched = rule.some(s => nRaw.includes(s));
+      } else if (typeof rule === "function") {
+        matched = rule(nRaw);
+      }
+
+      if (matched) {
+        for(let r=0;r<all.length;r++){
+          let cell=(all[r]||[])[c]||"";
+          if(cell.includes("★")||cell.includes("☆")){
+            text=cell;
+            highlight=true;
+            break;
+          }
+        }
+      }
+      cells[i].textContent=text;
+      cells[i].classList.remove("strike"); // 日付変更時に取り消し線をリセット
+      cells[i].classList.toggle("highlight-red",highlight);
+    }
+  });
+
+  // 日付変更時にも欠席自動取り消し線を同期
+  if(typeof syncAbsentStrikes === "function") syncAbsentStrikes();
+}
+
+/* ===== キー操作 ===== */
+window.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight"){col+=6;update();}
+  if(e.key==="ArrowLeft"){col=Math.max(1,col-6);update();}
+});
+
+/* ===== 取り消し線（クリック判定） ===== */
+window.addEventListener("DOMContentLoaded",()=>{
+  const observer=new MutationObserver(()=>{
+    document.querySelectorAll(".cell").forEach(cell=>{
+      if(!cell.dataset.init){
+        cell.dataset.init="1";
+        cell.addEventListener("click",()=>{
+          cell.classList.toggle("strike");
+        });
+      }
+    });
+  });
+  observer.observe(document.getElementById("main"),{
+    childList:true,subtree:true
+  });
+});
+
+/* ===== 出欠管理機能 ===== */
+const students=[
+  "墨谷","前田","井上","得平","久保","榎本",
+  "新城","田中","川口","原","安並","渡辺"
+];
+
+let attendanceState = {
+  absent: [], 
+  late: [],   
+  leave: []   
+};
+
+// ★欠席者の全セルに自動で線を引く・消す関数
+function syncAbsentStrikes() {
+  ids.forEach(id => {
+    const cells = document.getElementById(id).children;
+    // 現在の欠席リストに名前マップの苗字が含まれているかチェック
+    const isAbsent = attendanceState.absent.some(name => nameMap[id].includes(name));
+    
+    for (let i = 0; i < cells.length; i++) {
+      if (isAbsent) {
+        cells[i].classList.add("strike");
+      } else {
+        cells[i].classList.remove("strike");
+      }
+    }
+  });
+}
+
+window.addEventListener("DOMContentLoaded",()=>{
+  const board=document.createElement("div");
+  board.id="attendance-board";
+  board.style.gridColumn="7 / 9";
+  board.style.gridRow="2 / 3";
+
+  // タイトルとリセットボタンを包むコンテナ
+  const titleContainer=document.createElement("div");
+  titleContainer.className="att-title-container";
+
+  const title=document.createElement("div");
+  title.className="att-title";
+  title.textContent="出欠管理";
+  titleContainer.appendChild(title);
+
+  // リセットボタンの生成
+  const resetBtn=document.createElement("button");
+  resetBtn.className="att-reset-btn";
+  resetBtn.textContent="リセット";
+  titleContainer.appendChild(resetBtn);
+
+  board.appendChild(titleContainer);
+
+  const container = document.createElement("div");
+  container.className = "att-sections-container";
+
+  const sections = [
+    { key: "absent", label: "【欠席】", class: "sec-absent" },
+    { key: "late",   label: "【遅刻】", class: "sec-late" },
+    { key: "leave",  label: "【早退】", class: "sec-leave" }
+  ];
+
+  const renderAll = () => {
+    sections.forEach(sec => {
+      const listEl = document.getElementById(`list-${sec.key}`);
+      listEl.innerHTML = "";
+      
+      attendanceState[sec.key].forEach(name => {
+        const badge = document.createElement("div");
+        badge.className = "name-badge";
+        badge.innerHTML = `${name} <span class="remove-btn">×</span>`;
+        
+        badge.querySelector(".remove-btn").addEventListener("click", () => {
+          attendanceState[sec.key] = attendanceState[sec.key].filter(n => n !== name);
+          renderAll();
+        });
+        listEl.appendChild(badge);
+      });
+
+      const selectEl = document.getElementById(`select-${sec.key}`);
+      selectEl.innerHTML = `<option value="">+ 追加</option>`;
+      
+      students.forEach(name => {
+        // すでに「このリスト自体」に登録されているかチェック
+        const isAlreadyInThisSec = attendanceState[sec.key].includes(name);
+        // 「欠席」に登録されているかチェック
+        const isAbsent = attendanceState.absent.includes(name);
+
+        let canAdd = false;
+
+        if (sec.key === "absent") {
+          // 欠席に登録できるのは、遅刻・早退を含めまだどこにも登録されていない人のみ
+          const isAssignedAnywhere = sections.some(s => attendanceState[s.key].includes(name));
+          if (!isAssignedAnywhere) canAdd = true;
+        } else {
+          // 遅刻・早退に登録できるのは、「欠席」しておらず、かつ「そのリスト」にまだいない人（遅刻と早退の重複は可能）
+          if (!isAbsent && !isAlreadyInThisSec) canAdd = true;
+        }
+
+        if (canAdd) {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          selectEl.appendChild(opt);
+        }
+      });
+      selectEl.value = ""; 
+    });
+
+    // 描画更新の最後に自動取り消し線を同期
+    syncAbsentStrikes();
+  };
+
+  // リセットボタンのクリックイベント割り当て
+  resetBtn.addEventListener("click", () => {
+    attendanceState.absent = [];
+    attendanceState.late = [];
+    attendanceState.leave = [];
+    renderAll();
+  });
+
+  sections.forEach(sec => {
+    const secEl = document.createElement("div");
+    secEl.className = `att-section ${sec.class}`;
+
+    const headerEl = document.createElement("div");
+    headerEl.className = "att-section-header";
+    headerEl.innerHTML = `<span>${sec.label}</span>`;
+
+    const selectEl = document.createElement("select");
+    selectEl.id = `select-${sec.key}`;
+    
+    selectEl.addEventListener("change", (e) => {
+      const selectedName = e.target.value;
+      if (selectedName) {
+        attendanceState[sec.key].push(selectedName);
+        renderAll();
+      }
+    });
+
+    headerEl.appendChild(selectEl);
+    secEl.appendChild(headerEl);
+
+    const listEl = document.createElement("div");
+    listEl.id = `list-${sec.key}`;
+    listEl.className = "att-name-list";
+    secEl.appendChild(listEl);
+
+    container.appendChild(secEl);
+  });
+
+  board.appendChild(container);
+  document.getElementById("main").appendChild(board);
+  
+  renderAll();
+});
+</script>
+
+</body>
+</html>
