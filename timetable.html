@@ -425,9 +425,8 @@ ids.forEach(id=>{
   }
 });
 
-/* ===== CSV自動読み込み (Webサーバー配信用) ===== */
+/* ===== CSV自動読み込み (Webサーバー配信用 - 文字化け対策版) ===== */
 window.addEventListener("DOMContentLoaded", () => {
-  // ★ 末尾に「?t=タイムスタンプ」を合体させて、ブラウザの古い記憶（キャッシュ）を強制的に破壊します
   const cacheBuster = "?t=" + new Date().getTime();
   
   fetch("./timetable.csv" + cacheBuster)
@@ -435,16 +434,17 @@ window.addEventListener("DOMContentLoaded", () => {
       if (!response.ok) {
         throw new Error("ネットワーク応答が正常ではありません");
       }
-      return response.arrayBuffer();
+      return response.blob();
     })
-    .then(buffer => {
-      // 手動選択で成功している「Shift-JIS（windows-31j）」を確実に適用
-      let decoder = new TextDecoder("windows-31j");
-      let text = decoder.decode(buffer);
-      all = text.split(/\r?\n/).map(x => x.split(","));
-      col = 1;
-      update();
-      document.getElementById("status").textContent = "自動読込完了";
+    .then(blob => {
+      let r = new FileReader();
+      r.onload = e => {
+        all = e.target.result.split(/\r?\n/).map(x => x.split(","));
+        col = 1;
+        update();
+        document.getElementById("status").textContent = "自動読込完了";
+      };
+      r.readAsText(blob, "windows-31j");
     })
     .catch(error => {
       console.log("自動読み込みスキップ、またはファイル未検出:", error);
@@ -662,7 +662,7 @@ window.addEventListener("DOMContentLoaded",()=>{
     headerEl.appendChild(selectEl);
     secEl.appendChild(headerEl);
 
-    const listEl = document.getElementById(`list-${sec.key}`);
+    const listEl = document.createElement("div");
     listEl.id = `list-${sec.key}`;
     listEl.className = "att-name-list";
     secEl.appendChild(listEl);
