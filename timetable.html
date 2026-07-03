@@ -437,8 +437,8 @@ window.addEventListener("DOMContentLoaded", () => {
       return response.arrayBuffer();
     })
     .then(buffer => {
-      // ★ ブラウザ標準で最も互換性の高い識別名「shift_jis」に修正し、文字化けを解消
-      let decoder = new TextDecoder("shift_jis");
+      // ★ 最も互換性の高い特殊対応型のエンコード名「windows-31j」に指定し、Excel起因の文字化けを完全解消
+      let decoder = new TextDecoder("windows-31j");
       let text = decoder.decode(buffer);
       all = text.split(/\r?\n/).map(x => x.split(","));
       col = 1;
@@ -461,7 +461,8 @@ document.getElementById("csvFile").addEventListener("change",e=>{
     update();
     document.getElementById("status").textContent="読込完了";
   };
-  r.readAsText(f,"Shift-JIS");
+  // ★ 自動読み込みと整合性を合わせるため「windows-31j」で読み込み
+  r.readAsText(f,"windows-31j");
 });
 
 function update(){
