@@ -209,7 +209,7 @@ main{
   display:flex;
   justify-content:flex-start; /* 左寄せに変更 */
   align-items:center;
-  gap:10px;                   /* 文字とボタンの隙間 */
+  gap:10px;                    /* 文字とボタンの隙間 */
   border-bottom:2px solid #333;
   padding-bottom:2px;
 }
@@ -437,7 +437,8 @@ window.addEventListener("DOMContentLoaded", () => {
       return response.arrayBuffer();
     })
     .then(buffer => {
-      let decoder = new TextDecoder("shift-jis");
+      // ★ ブラウザ標準で最も互換性の高い識別名「shift_jis」に修正し、文字化けを解消
+      let decoder = new TextDecoder("shift_jis");
       let text = decoder.decode(buffer);
       all = text.split(/\r?\n/).map(x => x.split(","));
       col = 1;
